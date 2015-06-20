@@ -109,7 +109,7 @@ listener_thread () {
 	echo "outside loop exit"
 	exit 0
 	)
-	}
+}
 
 
 
@@ -121,7 +121,5 @@ listener_thread () {
 
 listener_thread
 
-#8303;8309;/mnt/external/temportal/tmp/networkpipein.7466;/mnt/external/temportal/tmp/networkpipeout.15698;
-#outside loop exit
-
-
+##8303;8309;/mnt/external/temportal/tmp/networkpipein.7466;/mnt/external/temportal/tmp/networkpipeout.15698;
+##outside loop exit
