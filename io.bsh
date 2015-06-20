@@ -113,11 +113,15 @@ listener_thread () {
 
 
 
-##listening on [any] 5678 ...
-##connect to [192.168.1.67] from temlaptop.attlocal.net [192.168.1.66] 53748
+
 
 ####################################################################
 # MAIN
 ####################################################################
 
 listener_thread
+
+#8303;8309;/mnt/external/temportal/tmp/networkpipein.7466;/mnt/external/temportal/tmp/networkpipeout.15698;
+#outside loop exit
+
+
