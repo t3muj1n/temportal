@@ -1,0 +1,123 @@
+#!/usr/bin/env bash
+
+#######################################################
+#	temportal.
+#	owner: tem
+#	dev: tem
+#	description:where no bash script has gone before.
+#				and probably shouldn't have :D
+#				a nonblocking tcp service. 
+#				written in bash.
+#				WARNING: proof of concept code.
+#						 use at own risk.
+########################################################
+# this is the main network interface function of the program.
+# it listens for incoming connections, and then parses the input
+# and decides what commands or functions to run from there.
+
+myconfig="./etc/temportal.cfg" # location of global vars and such.
+listner_banner=('\ntem diagnostic tools v0.01\nhello!\n\ntem>' )
+
+
+
+######source config files , function libs , etc.#############
+
+
+if [[ -f "$myconfig" ]]; then
+    source "$myconfig"
+else
+    echo "ERROR - ${myconfig} file not found"
+    exit 1
+fi
+
+
+###############################  FUNCTIONS  #################################
+
+
+#function to generate a random named named pipe
+ set_networkpipein () {
+
+	networkpipein="$( read networkpipein <<< ${mytmp}/networkpipein.${RANDOM} && echo $networkpipein )"
+	
+	if ! [[ -p "${networkpipein}" ]] ; then 
+		mkfifo "${networkpipein}"
+	else 
+		set_networkpipein
+	fi
+}
+
+#function to generate a random named named pipe
+set_networkpipeout () {
+	
+	networkpipeout="$( read networkpipeout <<< ${mytmp}/networkpipeout.${RANDOM} && echo ${networkpipeout} )"
+
+	if ! [[ -p "${networkpipeout}" ]] ; then 
+		mkfifo "${networkpipeout}"
+	else 
+		set_networkpipeout
+	fi
+
+}
+
+######################
+command_interpreter () {
+	if [[ "${line[0]}" = "date" ]]; then
+		"${mybin}/mydate"				# show the server time
+	elif [[ "${line[0]}" = "serverinfo" ]]; then	# generic placeholder to show server info
+		"${mybin}/serverinfo"
+	elif [[ "${line[0]}" = "callbackshell" ]]; then	
+		( bash -i > "$networkpipeout" 2>&1 )			# drops you into a bash shell.
+	elif [[ "${line[0]}" = "help" ]]; then				
+		echo "help func goes here"						# place holder for help function.
+	elif [[ "${line[0]}" = "mynmap" ]]; then			# basic generic nmap command takes in
+		"${mybin}/mynmap" "${line[1]}" 	
+	elif [[ "${line[0]}" = "exit" ]]; then		# if exit then 		 
+		echo "exiting!"; sleep 1; kill "$ncpid" 		# kill nc and end the session.
+		break 											
+	fi												# end the if.
+	printf 'tem>'									# prompt
+
+}
+
+
+listener_thread () {
+	(
+	mypid="$$"			# get my own pid.
+	set_networkpipein							# call and setup the networkpipein named pipe
+	set_networkpipeout							# call and setup the networkpipeout named pipe
+
+	nc -v -l -p "$listenport" < "$networkpipeout"  > "$networkpipein" 2>&1 & 
+	ncpid=($!)							# catch the pid of the most recent backgrounded command.
+
+	printf "%b" "${listner_banner[@]}" > "$networkpipeout" 2>&1 &
+	# load netout for when client connects
+ 
+	read  -a line1 < "$networkpipein"		# should be the first line from nc saying its listening
+	read  -a line2 < "$networkpipein" 		# should be the connect line, when the client connects.
+
+
+	printf "%b" "${mypid};${ncpid};${networkpipein};${networkpipeout};${line1[*]};${line2[*]};\n" >> "${masterlog}" 2>&1
+	# return some stuff to main in csv
+	printf "%b" "${mypid};${ncpid};${networkpipein};${networkpipeout};\n"
+	
+	
+	# reads client data from the incoming network pipe.
+	while  read  -a line ; do
+		command_interpreter							# start the main processing loop.
+	done <  "$networkpipein" > "$networkpipeout"	# attach the named pipes to the loop input and output
+	
+	echo "outside loop exit"
+	exit 0
+	)
+	}
+
+
+
+##listening on [any] 5678 ...
+##connect to [192.168.1.67] from temlaptop.attlocal.net [192.168.1.66] 53748
+
+####################################################################
+# MAIN
+####################################################################
+
+listener_thread

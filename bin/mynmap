@@ -1,0 +1,4 @@
+#!/bin/bash
+nmap -v --reason --unprivileged "$1"
+
+exit "$?"

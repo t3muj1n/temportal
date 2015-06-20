@@ -1,0 +1,8 @@
+#!/bin/bash
+uname -a
+uptime
+who
+df -h
+free -h
+exit 0
+
