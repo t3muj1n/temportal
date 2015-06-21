@@ -100,8 +100,7 @@ listener_thread () {
 
 	printf "%b" "${mypid};${ncpid};${networkpipein};${networkpipeout};${line1[*]};${line2[*]};\n" >> "${masterlog}" 2>&1
 	# return some stuff to main in csv
-	printf "%s\n" "connected;${mypid};${ncpid};"
-	
+	printf "%s\n" "connected.${mypid};${ncpid};"
 	
 	# reads client data from the incoming network pipe.
 	while  read  -a line ; do
@@ -110,8 +109,8 @@ listener_thread () {
 	
 	rm "$networkpipein" || echo "failed to remove $networkpipein"
 	rm "$networkpipeout" || echo "failed to remove $networkpipeout"
-	printf "%s\n" "exiting;${mypid};" 
-	exit 0
+	printf "%s\n" "exiting.${mypid};" 
+	return 0
 	
 }
 
@@ -122,12 +121,12 @@ listener_thread () {
 ####################################################################
 # MAIN
 ####################################################################
+#just catch the return info right now from listener thread while we figure this out.
 
 while read -r linefromthread ; do
 	printf "%s\n" "${linefromthread}"	
-done < <(listener_thread)
+done < <(listener_thread ) && 
+printf "%s\n" " listenerthread exited with return code of $? and pid of $! "
+exit 0
 
-	
-	
-##8303;8309;/mnt/external/temportal/tmp/networkpipein.7466;/mnt/external/temportal/tmp/networkpipeout.15698;
-##outside loop exit
+
