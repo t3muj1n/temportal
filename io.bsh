@@ -81,13 +81,15 @@ command_interpreter () {
 
 
 listener_thread () {
-	(
+	
 	mypid="$$"			# get my own pid.
 	set_networkpipein							# call and setup the networkpipein named pipe
 	set_networkpipeout							# call and setup the networkpipeout named pipe
-
+	
+	printf "%s\n" "started.${mypid}"
+	
 	nc -v -l -p "$listenport" < "$networkpipeout"  > "$networkpipein" 2>&1 & 
-	ncpid=($!)							# catch the pid of the most recent backgrounded command.
+	ncpid="$!"							# catch the pid of the most recent backgrounded command.
 
 	printf "%b" "${listner_banner[@]}" > "$networkpipeout" 2>&1 &
 	# load netout for when client connects
@@ -110,7 +112,7 @@ listener_thread () {
 	rm "$networkpipeout" || echo "failed to remove $networkpipeout"
 	printf "%s\n" "exiting;${mypid};" 
 	exit 0
-	)
+	
 }
 
 
@@ -124,8 +126,7 @@ listener_thread () {
 while read -r linefromthread ; do
 	printf "%s\n" "${linefromthread}"	
 done < <(listener_thread)
-	
-	
+
 	
 	
 ##8303;8309;/mnt/external/temportal/tmp/networkpipein.7466;/mnt/external/temportal/tmp/networkpipeout.15698;
