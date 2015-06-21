@@ -106,7 +106,9 @@ listener_thread () {
 		command_interpreter							# start the main processing loop.
 	done <  "$networkpipein" > "$networkpipeout"	# attach the named pipes to the loop input and output
 	
-	echo "outside loop exit"
+	printf "%s\n" "${mypid}" 
+	rm "$networkpipein" || echo "failed to remove $networkpipein"
+	rm "$networkpipeout" || echo "failed to remove $networkpipeout"
 	exit 0
 	)
 }
@@ -120,9 +122,11 @@ listener_thread () {
 ####################################################################
 
 while read -r linefromthread ; do
-	printf "%s\n" "fromthread - ${linefromthread}";
+	printf "%s\n" "${linefromthread}"	
 done < <(listener_thread)
 	
-
+	
+	
+	
 ##8303;8309;/mnt/external/temportal/tmp/networkpipein.7466;/mnt/external/temportal/tmp/networkpipeout.15698;
 ##outside loop exit
