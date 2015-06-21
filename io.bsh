@@ -15,21 +15,21 @@
 # it listens for incoming connections, and then parses the input
 # and decides what commands or functions to run from there.
 
-myconfig="./etc/temportal.cfg" # location of global vars and such.
-listner_banner=('\ntem diagnostic tools v0.01\nhello!\n\ntem>' )
+
+
 
 
 
 ######source config files , function libs , etc.#############
 
-
+source_configfiles () {
 if [[ -f "$myconfig" ]]; then
     source "$myconfig"
 else
     echo "ERROR - ${myconfig} file not found"
     exit 1
 fi
-
+}
 
 ###############################  FUNCTIONS  #################################
 
@@ -59,6 +59,7 @@ set_networkpipeout () {
 
 }
 
+
 ######################
 command_interpreter () {
 	if [[ "${line[0]}" = "date" ]]; then
@@ -86,7 +87,7 @@ listener_thread () {
 	set_networkpipein							# call and setup the networkpipein named pipe
 	set_networkpipeout							# call and setup the networkpipeout named pipe
 	
-	printf "%s\n" "started.${mypid}"
+	printf "%s\n" "started;${mypid};nodata;"
 	
 	nc -v -l -p "$listenport" < "$networkpipeout"  > "$networkpipein" 2>&1 & 
 	ncpid="$!"							# catch the pid of the most recent backgrounded command.
@@ -100,7 +101,7 @@ listener_thread () {
 
 	printf "%b" "${mypid};${ncpid};${networkpipein};${networkpipeout};${line1[*]};${line2[*]};\n" >> "${masterlog}" 2>&1
 	# return some stuff to main in csv
-	printf "%s\n" "connected.${mypid};${ncpid};"
+	printf "%s\n" "connected;${mypid};${ncpid};"
 	
 	# reads client data from the incoming network pipe.
 	while  read  -a line ; do
@@ -109,7 +110,7 @@ listener_thread () {
 	
 	rm "$networkpipein" || echo "failed to remove $networkpipein"
 	rm "$networkpipeout" || echo "failed to remove $networkpipeout"
-	printf "%s\n" "exiting.${mypid};" 
+	printf "%s\n" "exiting;${mypid};nodata;" 
 	return 0
 	
 }
@@ -123,9 +124,22 @@ listener_thread () {
 ####################################################################
 #just catch the return info right now from listener thread while we figure this out.
 
-while read -r linefromthread ; do
-	printf "%s\n" "${linefromthread}"	
-done < <(listener_thread ) && 
+listner_banner=('\ntem diagnostic tools v0.01\nhello!\n\ntem>' )
+myconfig="./etc/temportal.cfg" # location of global vars and such.
+source_configfiles 
+
+while IFS=';' read   threadcmd threadpid threaddata ; do
+
+	printf "%s\n" "${threadcmd} ${threadpid} ${threaddata} "
+	if [[ "$threadcmd" = "started" ]] ; then
+		echo "thread1 cmd is $threadcmd ; thread1 pid  is $threadpid  ; thread1 therest is $threaddata"
+	elif [[ "$threadcmd" = "connected" ]] ; then 
+		echo "thread1 cmd is $threadcmd ; thread1 pid  is $threadpid  ; thread1 therest is $threaddata"
+	elif [[ "$threadcmd" = "exiting" ]] ; then
+		echo "thread1 cmd is $threadcmd ; thread1 pid  is $threadpid  ; thread1 therest is $threaddata"
+	fi
+done < <( listener_thread )
+printf "%s\n" "${threadcmd} ${threadpid} ${threaddata} "
 printf "%s\n" " listenerthread exited with return code of $? and pid of $! "
 exit 0
 
