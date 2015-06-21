@@ -119,7 +119,10 @@ listener_thread () {
 # MAIN
 ####################################################################
 
-listener_thread
+while read -r linefromthread ; do
+	printf "%s\n" "fromthread - ${linefromthread}";
+done < <(listener_thread)
+	
 
 ##8303;8309;/mnt/external/temportal/tmp/networkpipein.7466;/mnt/external/temportal/tmp/networkpipeout.15698;
 ##outside loop exit
