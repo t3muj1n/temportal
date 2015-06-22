@@ -87,7 +87,6 @@ listener_thread () {
 	set_networkpipein							# call and setup the networkpipein named pipe
 	set_networkpipeout							# call and setup the networkpipeout named pipe
 	
-	printf "%s\n" "started;${mypid};nodata;"
 	
 	nc -v -l -p "$listenport" < "$networkpipeout"  > "$networkpipein" 2>&1 & 
 	ncpid="$!"							# catch the pid of the most recent backgrounded command.
@@ -128,23 +127,15 @@ listner_banner=('\ntem diagnostic tools v0.01\nhello!\n\ntem>' )
 myconfig="./etc/temportal.cfg" # location of global vars and such.
 source_configfiles 
 
-while IFS=';' read   threadcmd threadpid threaddata ; do
+while read -r line ; do
+	( listener_thread )  2>&1 &
+	echo "$line"
+done < <( listener_thread ) 2>&1 
 
-	printf "%s\n" "${threadcmd} ${threadpid} ${threaddata} "
-	if [[ "$threadcmd" = "started" ]] ; then
-		echo "thread cmd is $threadcmd ; thread1 pid  is $threadpid  ; thread1 therest is $threaddata"
-	elif [[ "$threadcmd" = "connected" ]] ; then 
-		echo "thread cmd is $threadcmd ; thread1 pid  is $threadpid  ; thread1 therest is $threaddata"
-			#a client connected. so we need to start a new listener thread
-			#and setup the io into this loop.
-			listener_thread &
-			continue
-	elif [[ "$threadcmd" = "exiting" ]] ; then
-		echo "thread cmd is $threadcmd ; thread1 pid  is $threadpid  ; thread1 therest is $threaddata"
-	fi
-done < <( listener_thread )
-printf "%s\n" "${threadcmd} ${threadpid} ${threaddata} "
-printf "%s\n" " listenerthread exited with return code of $? and pid of $! "
+
+
+#printf "%s\n" "${threadcmd} ${threadpid} ${threaddata} "
+#printf "%s\n" " listenerthread exited with return code of $? and pid of $! "
 exit 0
 
 
