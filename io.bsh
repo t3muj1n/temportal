@@ -132,11 +132,15 @@ while IFS=';' read   threadcmd threadpid threaddata ; do
 
 	printf "%s\n" "${threadcmd} ${threadpid} ${threaddata} "
 	if [[ "$threadcmd" = "started" ]] ; then
-		echo "thread1 cmd is $threadcmd ; thread1 pid  is $threadpid  ; thread1 therest is $threaddata"
+		echo "thread cmd is $threadcmd ; thread1 pid  is $threadpid  ; thread1 therest is $threaddata"
 	elif [[ "$threadcmd" = "connected" ]] ; then 
-		echo "thread1 cmd is $threadcmd ; thread1 pid  is $threadpid  ; thread1 therest is $threaddata"
+		echo "thread cmd is $threadcmd ; thread1 pid  is $threadpid  ; thread1 therest is $threaddata"
+			#a client connected. so we need to start a new listener thread
+			#and setup the io into this loop.
+			listener_thread &
+			continue
 	elif [[ "$threadcmd" = "exiting" ]] ; then
-		echo "thread1 cmd is $threadcmd ; thread1 pid  is $threadpid  ; thread1 therest is $threaddata"
+		echo "thread cmd is $threadcmd ; thread1 pid  is $threadpid  ; thread1 therest is $threaddata"
 	fi
 done < <( listener_thread )
 printf "%s\n" "${threadcmd} ${threadpid} ${threaddata} "
