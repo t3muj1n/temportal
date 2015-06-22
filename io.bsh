@@ -7,7 +7,7 @@
 #	description:where no bash script has gone before.
 #				and probably shouldn't have :D
 #				a nonblocking tcp service. 
-#				written in bash.
+#				written in bash. still buggy as shit.
 #				WARNING: proof of concept code.
 #						 use at own risk.
 ########################################################
@@ -66,8 +66,8 @@ command_interpreter () {
 		"${mybin}/mydate"				# show the server time
 	elif [[ "${line[0]}" = "serverinfo" ]]; then	# generic placeholder to show server info
 		"${mybin}/serverinfo"
-	elif [[ "${line[0]}" = "callbackshell" ]]; then	
-		( bash -i > "$networkpipeout" 2>&1 )			# drops you into a bash shell.
+#	elif [[ "${line[0]}" = "callbackshell" ]]; then	
+#		( bash -i > "$networkpipeout" 2>&1 )			# drops you into a bash shell.
 	elif [[ "${line[0]}" = "help" ]]; then				
 		echo "help func goes here"						# place holder for help function.
 	elif [[ "${line[0]}" = "mynmap" ]]; then			# basic generic nmap command takes in
@@ -86,7 +86,7 @@ listener_thread () {
 	mypid="$$"			# get my own pid.
 	set_networkpipein							# call and setup the networkpipein named pipe
 	set_networkpipeout							# call and setup the networkpipeout named pipe
-	
+	#printf "%b" "started;${mypid};${networkpipein};${networkpipeout};\n" 
 	
 	nc -v -l -p "$listenport" < "$networkpipeout"  > "$networkpipein" 2>&1 & 
 	ncpid="$!"							# catch the pid of the most recent backgrounded command.
@@ -100,16 +100,16 @@ listener_thread () {
 
 	printf "%b" "${mypid};${ncpid};${networkpipein};${networkpipeout};${line1[*]};${line2[*]};\n" >> "${masterlog}" 2>&1
 	# return some stuff to main in csv
-	printf "%s\n" "connected;${mypid};${ncpid};"
+	printf "%b" "connected;${mypid};${ncpid};${networkpipein};${networkpipeout};\n" 
 	
 	# reads client data from the incoming network pipe.
 	while  read  -a line ; do
 		command_interpreter							# start the main processing loop.
 	done <  "$networkpipein" > "$networkpipeout"	# attach the named pipes to the loop input and output
 	
-	rm "$networkpipein" || echo "failed to remove $networkpipein"
-	rm "$networkpipeout" || echo "failed to remove $networkpipeout"
-	printf "%s\n" "exiting;${mypid};nodata;" 
+	rm "$networkpipein"
+	rm "$networkpipeout"
+	printf "%b" "exiting;${mypid};${ncpid};${networkpipein};${networkpipeout};\n"
 	return 0
 	
 }
@@ -129,10 +129,11 @@ source_configfiles
 
 while read -r line ; do
 	( listener_thread )  2>&1 &
-	echo "$line"
+	printf "%b" "${line}\n"
+	wait "${!}" 
 done < <( listener_thread ) 2>&1 
 
-
+wait ${!}
 
 #printf "%s\n" "${threadcmd} ${threadpid} ${threaddata} "
 #printf "%s\n" " listenerthread exited with return code of $? and pid of $! "
