@@ -59,7 +59,9 @@ set_networkpipeout () {
 
 }
 
-
+# i got an idea to modify this to read from a directory called bin
+# this will autopopulate the commands that are enumerated below.
+#i will work on modifying this later today.
 ######################
 command_interpreter () {
 	if [[ "${line[0]}" = "date" ]]; then
