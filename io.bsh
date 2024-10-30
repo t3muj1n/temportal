@@ -5,19 +5,12 @@
 #	owner: tem
 #	dev: tem
 #	description:where no bash script has gone before.
-#				and probably shouldn't have :D
-#				a nonblocking tcp service. 
-#				written in bash. still buggy as shit.
-#				WARNING: proof of concept code.
-#						 use at own risk.
+# 	proof of concept code.
+#	use at own risk.
 ########################################################
 # this is the main network interface function of the program.
 # it listens for incoming connections, and then parses the input
 # and decides what commands or functions to run from there.
-
-
-
-
 
 
 ######source config files , function libs , etc.#############
@@ -65,48 +58,45 @@ set_networkpipeout () {
 ######################
 command_interpreter () {
 	if [[ "${line[0]}" = "date" ]]; then
-		"${mybin}/mydate"				# show the server time
-	elif [[ "${line[0]}" = "serverinfo" ]]; then	# generic placeholder to show server info
+		"${mybin}/mydate"					# show the server time
+	elif [[ "${line[0]}" = "serverinfo" ]]; then			# generic placeholder to show server info
 		"${mybin}/serverinfo"
-#	elif [[ "${line[0]}" = "callbackshell" ]]; then	
-#		( bash -i > "$networkpipeout" 2>&1 )			# drops you into a bash shell.
+	elif [[ "${line[0]}" = "callbackshell" ]]; then	
+		( bash -i > "$networkpipeout" 2>&1 )			# drops you into a bash shell.
 	elif [[ "${line[0]}" = "help" ]]; then				
-		echo "help func goes here"						# place holder for help function.
+		echo "help func goes here"				# place holder for help function.
 	elif [[ "${line[0]}" = "mynmap" ]]; then			# basic generic nmap command takes in
 		"${mybin}/mynmap" "${line[1]}" 	
-	elif [[ "${line[0]}" = "exit" ]]; then		# if exit then 		 
+	elif [[ "${line[0]}" = "exit" ]]; then				# if exit then 		 
 		echo "exiting!"; sleep 1; kill "$ncpid" 		# kill nc and end the session.
 		break 											
-	fi												# end the if.
-	printf 'tem>'									# prompt
+	fi								# end the if.
+	printf 'tem>'							# prompt
 
 }
 
 
 listener_thread () {
 	
-	mypid="$$"			# get my own pid.
-	set_networkpipein							# call and setup the networkpipein named pipe
-	set_networkpipeout							# call and setup the networkpipeout named pipe
+	mypid="$$"							# get my own pid.
+	set_networkpipein						# call and setup the networkpipein named pipe
+	set_networkpipeout						# call and setup the networkpipeout named pipe
+
 	#printf "%b" "started;${mypid};${networkpipein};${networkpipeout};\n" 
-	
 	nc -v -l -p "$listenport" < "$networkpipeout"  > "$networkpipein" 2>&1 & 
 	ncpid="$!"							# catch the pid of the most recent backgrounded command.
-
 	printf "%b" "${listner_banner[@]}" > "$networkpipeout" 2>&1 &
-	# load netout for when client connects
- 
+	
+# load netout for when client connects
 	read  -a line1 < "$networkpipein"		# should be the first line from nc saying its listening
 	read  -a line2 < "$networkpipein" 		# should be the connect line, when the client connects.
 
-
-	printf "%b" "${mypid};${ncpid};${networkpipein};${networkpipeout};${line1[*]};${line2[*]};\n" >> "${masterlog}" 2>&1
-	# return some stuff to main in csv
-	printf "%b" "connected;${mypid};${ncpid};${networkpipein};${networkpipeout};\n" 
-	
-	# reads client data from the incoming network pipe.
+	printf "%b" "${mypid};${ncpid};${networkpipein};${networkpipeout};${line1[*]};${line2[*]};\n" >> "${masterlog}" 2>&1;
+							# return some stuff to main in csv
+	printf "%b" "connected;${mypid};${ncpid};${networkpipein};${networkpipeout};\n";
+							# reads client data from the incoming network pipe.
 	while  read  -a line ; do
-		command_interpreter							# start the main processing loop.
+		command_interpreter			# start the main processing loop.
 	done <  "$networkpipein" > "$networkpipeout"	# attach the named pipes to the loop input and output
 	
 	rm "$networkpipein"
